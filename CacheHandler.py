@@ -72,5 +72,6 @@ class CacheHandler:
         total = 0
         for f in cache:
             total += os.path.getsize(self.cache_dir + '/' + f)
+        # TODO
         # total += sizeof(data)
         return total >= MAX_SIZE
