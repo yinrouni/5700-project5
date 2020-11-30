@@ -1,6 +1,7 @@
 import socket
 import traceback
 from urllib.request import Request, urlopen, HTTPError
+import CacheHandler
 
 # Build a simple cache server in python: https://alexanderell.is/posts/simple-cache-server-in-python/
 
@@ -34,7 +35,7 @@ class HttpServer:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(('', port))
         self.origin = origin
-        self.cache_handler
+        self.cache_handler = CacheHandler.CacheHandler()
 
     def shutdown(self):
         self.server.close()
@@ -62,8 +63,7 @@ class HttpServer:
                     conn.close()
 
                 else:
-                    url = self.origin + ':8080' + path
-                    data = self.do_GET(url)
+                    data = self.do_GET(path)
                     conn.sendall(data)
                     conn.close()
 
@@ -83,19 +83,21 @@ class HttpServer:
             except Exception:
                 print(traceback.format_exc())
 
-    def do_GET(self, url):
+    def do_GET(self, path):
         # if in the cache, return the content in cache
 
         # else generate http GET request according to the url
-        if file_from_cache:
+        file_from_cache = self.cache_handler.get(path)
+        if file_from_cache is not None:
             print('Fetched successfully from cache.')
             return file_from_cache
         else:
+            url = self.origin + ':8080' + path
             print('Not in cache. Fetching from server.')
             file_from_server = fetch_from_server(url)
 
-            if file_from_server:
-                save_in_cache(filename, file_from_server)
+            if file_from_server is not None:
+                self.cache_handler.set(path, file_from_server)
                 return file_from_server
             else:
                 return None
