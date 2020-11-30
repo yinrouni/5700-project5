@@ -34,6 +34,22 @@ class CacheHandler:
             file_name = get_hash_path(path)
 
             if file_name in self.cached_data:
+                # move to the head of the list
+                self.cached_data.remove(file_name)
+                self.cached_data.append(file_name)
+
+                try:
+                    file = open(self.cache_dir + '/' + file_name, 'rb')
+                    content = file.read()
+                    file.close()
+                    return content
+                except:
+                    self.cached_data.remove(file_name)
+                    os.remove(self.cache_dir + '/' + file_name)
+                    return -1
+            else:
+                return -1
+
 
 
 
