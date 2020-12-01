@@ -3,6 +3,7 @@
 import threading
 import os
 import hashlib
+import gzip
 
 MAX_SIZE = 10 * 1024 * 1024
 
@@ -40,7 +41,7 @@ class CacheHandler:
                 self.cached_data.append(file_name)
 
                 try:
-                    file = open(self.cache_dir + '/' + file_name, 'rb')
+                    file = gzip.open(self.cache_dir + '/' + file_name, 'rb')
                     content = file.read()
                     file.close()
                     return content
@@ -62,7 +63,7 @@ class CacheHandler:
                 discard = self.cached_data.pop(0)
                 os.remove(self.cache_dir + '/' + discard)
 
-            file = open(self.cache_dir + '/' + file_name)
+            file = gzip.open(self.cache_dir + '/' + file_name)
             file.write(data)
             file.close()
             self.cached_data.append(file_name)

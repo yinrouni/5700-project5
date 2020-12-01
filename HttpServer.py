@@ -34,6 +34,7 @@ class HttpServer:
     def __init__(self, origin, port):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(('', port))
+        # print(self.server.getsockname())
         self.origin = origin
         self.cache_handler = CacheHandler.CacheHandler()
 
@@ -66,17 +67,6 @@ class HttpServer:
                     data = self.do_GET(path)
                     conn.sendall(data)
                     conn.close()
-
-
-
-
-
-
-
-
-
-
-
             except KeyboardInterrupt:
                 self.shutdown()
                 return
