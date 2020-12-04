@@ -1,9 +1,4 @@
-import socketserver
 import struct
-import socket as socketlib
-import traceback
-import dnslib
-import traceback
 
 # DNS Query
 class DNSQuery:
@@ -64,7 +59,7 @@ class DNSFrame:
         self.answers = 1
         self.flags = 33152
 
-    def getbytes(self):
+    def pack(self):
         res = struct.pack('!HHHHHH', self.id, self.flags, self.quests, self.answers, self.author, self.addition)
         res = res + self.query.pack()[0]
         if self.answers != 0:

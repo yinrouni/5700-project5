@@ -51,7 +51,7 @@ class DNSserver:
                 print('%s: %s-->%s (%s)' % (addr[0], name, toip, ifrom))
                 # pprint.pprint(t1.decode_dns_message(dns.getbytes()))
                 # print(dnslib.DNSRecord.parse(dns.getbytes()))
-                self.server.sendto(dns.getbytes(), addr)
+                self.server.sendto(dns.pack(), addr)
             else:
                 # If this is not query a A record, ignore it
                 self.server.sendto(data, addr)
