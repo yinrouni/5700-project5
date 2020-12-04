@@ -1,4 +1,4 @@
-# LRU algo: /cache/data files
+# LRU algo: /cache/data files ==> LFU
 
 import threading
 import os
@@ -21,12 +21,12 @@ class CacheHandler:
         self.lock = threading.Lock()
         self.cache_dir = 'cache'
 
-        self.cached_data = self.load_cache()
+        self.cached_data = self.load_cache()  # (hashed_filename, hitcount)
 
     def load_cache(self):
         with self.lock:
             if os.path.exists(self.cache_dir):
-                return os.listdir(self.cache_dir)
+                return map(lambda x: (x, 1), os.listdir(self.cache_dir))
             else:
                 os.mkdir(self.cache_dir)
                 return []
@@ -35,38 +35,42 @@ class CacheHandler:
         with self.lock:
             file_name = get_hash_path(path)
 
-            if file_name in self.cached_data:
-                # move to the head of the list
-                self.cached_data.remove(file_name)
-                self.cached_data.append(file_name)
+            for item in self.cached_data:
 
-                try:
-                    file = gzip.open(self.cache_dir + '/' + file_name, 'rb')
-                    content = file.read()
-                    file.close()
-                    return content
-                except:
-                    self.cached_data.remove(file_name)
-                    os.remove(self.cache_dir + '/' + file_name)
-                    return None
-            else:
-                return None
+                if file_name == item[0]:
+                    # move to the head of the list
+                    self.cached_data.append((file_name, item[1] + 1))
+                    self.cached_data.remove(item)
+                    try:
+                        file = gzip.open(self.cache_dir + '/' + file_name, 'rb')
+                        content = file.read()
+                        file.close()
+                        print('cache hit ------ ', self.cached_data)
+                        return content
+                    except:
+                        self.cached_data.remove(item)
+                        os.remove(self.cache_dir + '/' + file_name)
+                        return None
+
+            return None
 
     def set(self, path, data):
         with self.lock:
             file_name = get_hash_path(path)
 
-            if file_name in self.cached_data:
-                self.cached_data.remove(file_name)
+            # if file_name in self.cached_data:
+            #     self.cached_data.remove(file_name)
 
-            elif self.is_full(data):
-                discard = self.cached_data.pop(0)
+            if self.is_full(data):
+                self.cached_data.sort(key=lambda x: x[1])
+                discard = self.cached_data.pop(0)[0]
                 os.remove(self.cache_dir + '/' + discard)
 
             file = gzip.open(self.cache_dir + '/' + file_name, 'wb')
             file.write(data)
             file.close()
-            self.cached_data.append(file_name)
+            self.cached_data.append((file_name, 1))
+            print('cache update ------', self.cached_data)
 
     def is_full(self, data):
         cache = os.listdir(self.cache_dir)
