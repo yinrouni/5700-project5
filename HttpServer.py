@@ -29,12 +29,15 @@ def fetch_from_server(url):
         print(q)
         response = urllib.urlopen(q)
         # Grab the header and content from the server req
-        response_headers = response.info()
-
+        response_headers = response.info().__str__()
         content = response.read()
+        if response.code != 200:
+            raise Exception('code != 200')
+        print(response.code)
+        response_headers = 'HTTP/1.1 200 OK\r\n' + response_headers
 
         #print(content)
-        return content
+        return response_headers, content
     except:
         traceback.print_exc()
         return None
@@ -92,16 +95,17 @@ class HttpServer:
         file_from_cache = self.cache_handler.get(path)
         if file_from_cache is not None:
             print('Fetched successfully from cache.')
+            response_headers = 'HTTP/1.1 200 OK\r\nContent-Length: ' + str(len(file_from_cache))+ '\r\n\r\n'
             # print(file_from_cache)
-            return file_from_cache
+            return response_headers.encode() + file_from_cache
         else:
             url = self.origin + ':8080' + path
             print('Not in cache. Fetching from server.')
-            file_from_server = fetch_from_server(url)
+            headers, file_from_server = fetch_from_server(url)
 
             if file_from_server is not None:
                 self.cache_handler.set(path, file_from_server)
-                return file_from_server
+                return (headers + '\r\n\r\n').encode() + file_from_server
             else:
                 return None
 
