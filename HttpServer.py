@@ -109,3 +109,4 @@ if __name__ == "__main__":
     server = HttpServer('ec2-18-207-254-152.compute-1.amazonaws.com', 40004)
     print('listening...')
     server.serve_forever()
+    # use replica to test: wget ec2-34-238-192-84.compute-1.amazonaws.com:40004/wiki/Main_Page
