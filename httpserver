@@ -1,0 +1,2 @@
+#! /bin/bash
+python HttpServer.py "$2" "$4"
