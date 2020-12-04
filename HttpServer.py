@@ -105,7 +105,7 @@ class HttpServer:
 
             if file_from_server is not None:
                 self.cache_handler.set(path, file_from_server)
-                return (headers + '\r\n\r\n').encode() + file_from_server
+                return (headers + '\r\n').encode() + file_from_server
             else:
                 return None
 
