@@ -3,7 +3,7 @@ import urllib
 import CacheHandler
 import traceback
 import subprocess
-import re
+import sys
 
 
 # Build a simple cache server in python: https://alexanderell.is/posts/simple-cache-server-in-python/
@@ -119,7 +119,12 @@ class HttpServer:
                 return None
 
 if __name__ == "__main__":
-    server = HttpServer('ec2-18-207-254-152.compute-1.amazonaws.com', 50004)
+    PORT = sys.argv[1]
+    ORIGIN = sys.argv[2]
+    server = HttpServer(ORIGIN, PORT)
+    # server = HttpServer('ec2-18-207-254-152.compute-1.amazonaws.com', 50004)
     print('listening...')
     server.serve_forever()
+
+    # run the server: python HttpServer.py 50004 ec2-18-207-254-152.compute-1.amazonaws.com
     # use replica to test: wget ec2-34-238-192-84.compute-1.amazonaws.com:50004/wiki/Main_Page

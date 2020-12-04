@@ -65,7 +65,7 @@ class DNSserver:
                     dns.setanswer(toip, ttl)
                     self.server.sendto(dns.pack(), addr)
 
-                # TODO cache
+                # TODO cache --- DONE
                 else:
                     print(self.cache)
                     if self.cache.__contains__(addr[0]):
@@ -123,10 +123,14 @@ class DNSserver:
 
 
 if __name__ == "__main__":
-    DOMAIN = sys.argv[1]
-    sev = DNSserver(port=50004)
+    DOMAIN = sys.argv[2]
+    PORT = sys.argv[1]
+    sev = DNSserver(port=PORT)
     sev.add_name('www.aa.com', '192.168.0.1')  # add a A record
     sev.add_name('www.bb.com', '192.168.0.2')  # add a A record
     # sev.addname('*', '0.0.0.0') # default address
     print('listening...')
     sev.serve_forever()  # start DNS server
+
+# run the server: python DNSserver.py 50004 cs5700cdn.example.com
+# test: dig +short +time=2 +tries=1 -p 50004 @cs5700cdnproject.ccs.neu.edu cs5700cdn.example.com
