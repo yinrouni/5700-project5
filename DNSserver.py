@@ -124,7 +124,7 @@ class DNSserver:
 
 if __name__ == "__main__":
     DOMAIN = sys.argv[2]
-    PORT = sys.argv[1]
+    PORT = int(sys.argv[1])
     sev = DNSserver(port=PORT)
     sev.add_name('www.aa.com', '192.168.0.1')  # add a A record
     sev.add_name('www.bb.com', '192.168.0.2')  # add a A record

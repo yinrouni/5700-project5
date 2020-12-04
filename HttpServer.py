@@ -119,7 +119,7 @@ class HttpServer:
                 return None
 
 if __name__ == "__main__":
-    PORT = sys.argv[1]
+    PORT = int(sys.argv[1])
     ORIGIN = sys.argv[2]
     server = HttpServer(ORIGIN, PORT)
     # server = HttpServer('ec2-18-207-254-152.compute-1.amazonaws.com', 50004)
