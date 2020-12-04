@@ -31,7 +31,7 @@ def fetch_from_server(url):
         # Grab the header and content from the server req
         response_headers = response.info()
 
-        content = response.read().decode('utf-8')
+        content = response.read()
 
         #print(content)
         return content
@@ -101,7 +101,7 @@ class HttpServer:
 
             if file_from_server is not None:
                 self.cache_handler.set(path, file_from_server)
-                return file_from_server.encode('utf-8')
+                return file_from_server
             else:
                 return None
 
