@@ -63,8 +63,8 @@ class CacheHandler:
                 discard = self.cached_data.pop(0)
                 os.remove(self.cache_dir + '/' + discard)
 
-            file = gzip.open(self.cache_dir + '/' + file_name)
-            file.write(data)
+            file = gzip.open(self.cache_dir + '/' + file_name, 'wb')
+            file.write(data.encode('utf-8'))
             file.close()
             self.cached_data.append(file_name)
 

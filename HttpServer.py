@@ -92,7 +92,7 @@ class HttpServer:
         file_from_cache = self.cache_handler.get(path)
         if file_from_cache is not None:
             print('Fetched successfully from cache.')
-            print(file_from_cache)
+            # print(file_from_cache)
             return file_from_cache
         else:
             url = self.origin + ':8080' + path
@@ -101,11 +101,11 @@ class HttpServer:
 
             if file_from_server is not None:
                 self.cache_handler.set(path, file_from_server)
-                return file_from_server
+                return file_from_server.encode('utf-8')
             else:
                 return None
 
 if __name__ == "__main__":
-    server = HttpServer('ec2-18-207-254-152.compute-1.amazonaws.com', 40008)
+    server = HttpServer('ec2-18-207-254-152.compute-1.amazonaws.com', 40004)
     print('listening...')
     server.serve_forever()
