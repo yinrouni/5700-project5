@@ -9,7 +9,8 @@ class DNSQuery:
         self.data = data
 
         while True:
-            d = data[i]
+            # d = data[i]
+            d = ord(data[i])
             if d == 0:
                 break
             if d < 32:
@@ -29,11 +30,11 @@ class DNSQuery:
 # DNS Answer RRS
 # this class is also can be use as Authority RRS or Additional RRS
 class DNSAnswer:
-    def __init__(self, ip):
+    def __init__(self, ip, ttl):
         self.name = 49164
         self.type = 1
         self.classify = 1
-        self.timetolive = 190
+        self.timetolive = ttl
         self.datalength = 4
         self.ip = ip
 
@@ -48,15 +49,15 @@ class DNSAnswer:
 # must initialized by a DNS query frame
 class DNSFrame:
     def __init__(self, data):
-        (self.id, self.flags, self.quests, self.answers, self.author, self.addition) = struct.unpack('>HHHHHH',
+        (self.id, self.flags, self.quests, self.answers, self.author, self.addition) = struct.unpack('!HHHHHH',
                                                                                                      data[0:12])
         self.query = DNSQuery(data[12:])
 
     def getname(self):
         return self.query.name
 
-    def setip(self, ip):
-        self.answer = DNSAnswer(ip)
+    def setanswer(self, ip, ttl=60):
+        self.answer = DNSAnswer(ip, ttl)
         self.answers = 1
         self.flags = 33152
 

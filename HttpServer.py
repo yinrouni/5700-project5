@@ -1,12 +1,14 @@
 import socket
-import traceback
 import urllib
 import CacheHandler
 import traceback
+import subprocess
+import re
+
 
 # Build a simple cache server in python: https://alexanderell.is/posts/simple-cache-server-in-python/
 
-RTT_MEASURE_PATH = '/ping'
+RTT_MEASURE_PATH = '/ping-'
 
 
 def get_request_path(request):
@@ -54,9 +56,12 @@ class HttpServer:
     def shutdown(self):
         self.server.close()
 
-    def process_rtt_request(self, request):
+    def process_rtt_request(self, path):
+        print('rtt path: ', path)
+        client_ip = path[len(RTT_MEASURE_PATH):]
+        result = subprocess.check_output(["scamper", "-c", "ping -c 1", "-i", client_ip])
 
-        return request
+        return result
 
     def serve_forever(self):
         self.server.listen(1)
@@ -74,11 +79,15 @@ class HttpServer:
 
                 # rtt measure
                 if RTT_MEASURE_PATH in path:
-                    rtt_rqst = self.process_rtt_request(request)
+                    print('----------- measure ------------')
+                    rtt_rqst = self.process_rtt_request(path)
+                    print('rtt', rtt_rqst)
                     conn.sendall(rtt_rqst.encode())
                     conn.close()
+                    print('---------- finish measure -------')
 
                 else:
+                    print('--------------- GET -------------')
                     data = self.do_GET(path)
                     conn.sendall(data)
                     conn.close()
@@ -110,7 +119,7 @@ class HttpServer:
                 return None
 
 if __name__ == "__main__":
-    server = HttpServer('ec2-18-207-254-152.compute-1.amazonaws.com', 40004)
+    server = HttpServer('ec2-18-207-254-152.compute-1.amazonaws.com', 50004)
     print('listening...')
     server.serve_forever()
-    # use replica to test: wget ec2-34-238-192-84.compute-1.amazonaws.com:40004/wiki/Main_Page
+    # use replica to test: wget ec2-34-238-192-84.compute-1.amazonaws.com:50004/wiki/Main_Page
