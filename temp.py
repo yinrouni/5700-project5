@@ -1,25 +1,19 @@
-
 import socketserver
 import struct
-import socket
-import t1
-import pprint
 import socket as socketlib
 import traceback
 import dnslib
-
+import traceback
 
 # DNS Query
 class SinDNSQuery:
     def __init__(self, data):
         i = 1
         self.name = ''
-        while True:
-            print(data.decode())
-            print(data[:-4].decode())
-            print(data[i])
-            d = ord(data[i].decode())
+        self.data = data
 
+        while True:
+            d = data[i]
             if d == 0:
                 break;
             if d < 32:
@@ -27,13 +21,13 @@ class SinDNSQuery:
             else:
                 self.name = self.name + chr(d)
             i = i + 1
-        print(self.name)
         self.querybytes = data[0:i + 1]
         (self.type, self.classify) = struct.unpack('>HH', data[i + 1:i + 5])
         self.len = i + 5
+        # print(data[self.len:])
 
-    def getbytes(self, data):
-        return data[:-4] + struct.pack('>HH', self.type, self.classify)
+    def getbytes(self):
+        return self.querybytes + struct.pack('>HH', self.type, self.classify), self.data[self.len:]
 
 
 # DNS Answer RRS
@@ -44,36 +38,26 @@ class SinDNSAnswer:
         self.type = 1
         self.classify = 1
         self.timetolive = 190
-        self.ip = ip
         self.datalength = 4
+        self.ip = ip
 
     def getbytes(self):
-        res = struct.pack('!HHHLH', self.name, self.type, self.classify, self.timetolive, self.datalength)
+        res = struct.pack('>HHHLH', self.name, self.type, self.classify, self.timetolive, self.datalength)
         s = self.ip.split('.')
         res = res + struct.pack('BBBB', int(s[0]), int(s[1]), int(s[2]), int(s[3]))
         return res
-
-        # res = struct.pack('!HHHLH4s', self.name, self.type, self.classify, self.timetolive, self.datalength, self.ip)
-        # # s = self.ip.split('.')
-        # # res = res + struct.pack('BBBB', int(s[0]), int(s[1]), int(s[2]), int(s[3]))
-        # return res
 
 
 # DNS frame
 # must initialized by a DNS query frame
 class SinDNSFrame:
     def __init__(self, data):
-        (self.id, self.flags, self.quests, self.answers, self.author, self.addition) = struct.unpack('!HHHHHH',
-                                                                                                    data[0:12])
-        self.question_data = data[12:]
-
-        self.packet = t1.decode_dns_message(data)
-        # print('frame' ,data[12:].decode())
-        self.query = self.packet['questions'][0]
-
+        (self.id, self.flags, self.quests, self.answers, self.author, self.addition) = struct.unpack('>HHHHHH',
+                                                                                                     data[0:12])
+        self.query = SinDNSQuery(data[12:])
 
     def getname(self):
-        return self.query['domain_name']
+        return self.query.name
 
     def setip(self, ip):
         self.answer = SinDNSAnswer(ip)
@@ -81,26 +65,25 @@ class SinDNSFrame:
         self.flags = 33152
 
     def getbytes(self):
-        res = struct.pack('!HHHHHH', self.id, self.flags, self.quests, self.answers, self.author, self.addition)
-        res = res + self.question_data
+        res = struct.pack('>HHHHHH', self.id, self.flags, self.quests, self.answers, self.author, self.addition)
+        res = res + self.query.getbytes()[0]
         if self.answers != 0:
             res = res + self.answer.getbytes()
-        return res
+        return res + self.query.getbytes()[1]
 
 
 # A UDPHandler to handle DNS query
 class SinDNSUDPHandler(socketserver.BaseRequestHandler):
     def handle(self):
         data = self.request[0].strip()
-        # pprint.pprint(t1.decode_dns_message(data))
+        print(dnslib.DNSRecord.parse(data))
         dns = SinDNSFrame(data)
         socket = self.request[1]
         namemap = SinDNSServer.namemap
-        if (dns.query['query_type'] == 1):
+        if (dns.query.type == 1):
             # If this is query a A record, then response it
 
-            name = '.'.join(map(lambda x: x.decode(),dns.getname()))
-            print(name)
+            name = dns.getname();
             toip = None
             ifrom = "map"
             if namemap.__contains__(name):
@@ -128,8 +111,8 @@ class SinDNSUDPHandler(socketserver.BaseRequestHandler):
             if toip:
                 dns.setip(toip)
             print('%s: %s-->%s (%s)' % (self.client_address[0], name, toip, ifrom))
+            #pprint.pprint(t1.decode_dns_message(dns.getbytes()))
             print(dnslib.DNSRecord.parse(dns.getbytes()))
-            # pprint.pprint(t1.decode_dns_message(dns.getbytes()))
             socket.sendto(dns.getbytes(), self.client_address)
         else:
             # If this is not query a A record, ignore it
@@ -159,8 +142,6 @@ if __name__ == "__main__":
     sev.addname('www.aa.com', '192.168.0.1')  # add a A record
     sev.addname('www.bb.com', '192.168.0.2')  # add a A record
     # sev.addname('*', '0.0.0.0') # default address
-    print('start...')
     sev.start()  # start DNS server
-
 
 # Now, U can use "nslookup" command to test it

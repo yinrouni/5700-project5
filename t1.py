@@ -82,7 +82,8 @@ def decode_dns_message(message):
               "answer_count": ancount,
               "authority_count": nscount,
               "additional_count": arcount,
-              "questions": questions}
+              "questions": questions,
+              "offset": offset}
 
     return result
 
