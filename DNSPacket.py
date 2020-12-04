@@ -1,5 +1,6 @@
 import struct
 
+
 # DNS Query
 class DNSQuery:
     def __init__(self, data):
@@ -65,4 +66,3 @@ class DNSFrame:
         if self.answers != 0:
             res = res + self.answer.pack()
         return res + self.query.pack()[1]
-
