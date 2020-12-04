@@ -1,7 +1,8 @@
 import socket
 import traceback
-from urllib.request import Request, urlopen, HTTPError
+import urllib
 import CacheHandler
+import traceback
 
 # Build a simple cache server in python: https://alexanderell.is/posts/simple-cache-server-in-python/
 
@@ -10,23 +11,32 @@ RTT_MEASURE_PATH = '/ping'
 
 def get_request_path(request):
     header = request.split('\r\n\r\n')[0]
-    method = header.split('\r\n')[0]
-    path = header.split('\r\n')[1] if method == 'GET' else ''
+    print('header ---- ', header)
+    start = header.split('\r\n')[0].split(' ')
+    print('start ----', start)
+    method = start[0]
+    print('method ----', method)
+    path = start[1] if method == 'GET' else ''
+    print(path)
     return path
 
 
 # TODO handle cache
 def fetch_from_server(url):
-    url = Request('http://' + url)
-    q = Request(url)
+    q = 'http://' + url
 
     try:
-        response = urlopen(q)
+        print(q)
+        response = urllib.urlopen(q)
         # Grab the header and content from the server req
         response_headers = response.info()
+
         content = response.read().decode('utf-8')
+
+        #print(content)
         return content
-    except HTTPError:
+    except:
+        traceback.print_exc()
         return None
 
 
@@ -46,12 +56,14 @@ class HttpServer:
         return request
 
     def serve_forever(self):
-        self.server.listen()
+        self.server.listen(1)
+        print('listened')
 
         # keep listening
         while True:
             try:
                 conn, addr = self.server.accept()
+                print('accepted')
                 request = conn.recv(1024).decode()
                 print('request: ', request)
 
@@ -80,6 +92,7 @@ class HttpServer:
         file_from_cache = self.cache_handler.get(path)
         if file_from_cache is not None:
             print('Fetched successfully from cache.')
+            print(file_from_cache)
             return file_from_cache
         else:
             url = self.origin + ':8080' + path
@@ -91,3 +104,8 @@ class HttpServer:
                 return file_from_server
             else:
                 return None
+
+if __name__ == "__main__":
+    server = HttpServer('ec2-18-207-254-152.compute-1.amazonaws.com', 40008)
+    print('listening...')
+    server.serve_forever()
