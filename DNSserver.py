@@ -11,6 +11,7 @@ import json
 import math
 import threading
 import Queue
+from math import sin, cos, sqrt, atan2, radians
 
 # import dnslib
 TTL = 60
@@ -32,8 +33,25 @@ def get_location(ip):
     return resp_json['lat'], resp_json['lon']
 
 
+# TODO: correct the formula --- DONE
 def cal_dis(client, host):
-    return math.sqrt((host[0] - client[0]) ** 2 + (host[1] - client[1]) ** 2)
+    # approximate radius of earth in km
+    R = 6373.0
+
+    lat1 = radians(client[0])
+    lon1 = radians(client[1])
+    lat2 = radians(host[0])
+    lon2 = radians(host[1])
+
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    distance = R * c  # in km
+
+    return distance
 
 
 def get_dis_to_client(client_ip):
@@ -67,7 +85,7 @@ def get_dis_to_client(client_ip):
 
 def get_nearest_3(host_dis):
     dis_tuple_ls = sorted(list(host_dis.queue), key=lambda x: x[1])
-    #dis_tuple_ls = sorted(host_dis.items(), key=lambda x: x[1])
+    # dis_tuple_ls = sorted(host_dis.items(), key=lambda x: x[1])
     sorted_hosts = map(lambda x: x[0], dis_tuple_ls)
     print('sorted host ============= ', sorted_hosts)
     return sorted_hosts[:3]
@@ -78,7 +96,6 @@ class DNSserver:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # udp
         self.server.bind(('', port))
         self.port = port
-        self.namemap = {}
         self.cache = {}  # client ip => (which replica to map, last time to fetch ip)
         self.measure_client = MeasureClient.MeasureClient(EC2_HOST.keys(), self.port)
 
@@ -88,12 +105,13 @@ class DNSserver:
                 # dns request
                 data, addr = self.server.recvfrom(1024)
                 print('new dns <- ', addr[0])
+                start = time.time()
 
                 self.measure_client.set_probe(addr[0])
 
-                start = time.time()
+                start1 = time.time()
                 self.measure_client.set_hosts(get_nearest_3(get_dis_to_client(addr[0])))
-                print('++++++++++++++++++++++++++++++++++++++++++', time.time() - start)
+                print('++++++++++++++++++++++++++++++++++++++++++', time.time() - start1)
                 # self.measure_client.set_hosts(EC2_HOST.keys())
 
                 dns = DNSPacket.DNSFrame(data)
@@ -136,34 +154,10 @@ class DNSserver:
                     best_host = self.measure_client.get_best()
                     toip = EC2_HOST[best_host]
 
-                    '''
-                    if self.namemap.__contains__(name):
-                        # If have record, response it
-                        # dns.setip(namemap[name])
-                        # socket.sendto(dns.getbytes(), self.client_address)
-                        toip = self.namemap[name]
-                    elif self.namemap.__contains__('*'):
-                        # Response default address
-                        # dns.setip(namemap['*'])
-                        # socket.sendto(dns.getbytes(), self.client_address)
-                        toip = self.namemap['*']
-                    else:
-                        # ignore it
-                        # socket.sendto(data, self.client_address)
-                        # socket.getaddrinfo(name,0)
-                        try:
-                            toip = socket.getaddrinfo(name, 0)[0][4][0]
-                            ifrom = "sev"
-                        # namemap[name] = toip
-                        # print socket.getaddrinfo(name,0)
-                        except Exception as e:
-                            traceback.print_exc()
-                            print('get ip fail')
-                    '''
                     if toip:
                         dns.setanswer(toip)
                         self.cache[addr[0]] = (toip, time.time())
-                    print('%s: %s-->%s (%s)' % (addr[0], name, toip, ifrom))
+                    print('%s: %s-->%s (%s)\t\t%s' % (addr[0], name, toip, ifrom, str(time.time() - start)))
                     # pprint.pprint(t1.decode_dns_message(dns.getbytes()))
                     # print(dnslib.DNSRecord.parse(dns.getbytes()))
                     self.server.sendto(dns.pack(), addr)
@@ -175,16 +169,11 @@ class DNSserver:
             print('shutdonwn...')
             return
 
-    def add_name(self, name, ip):
-        self.namemap[name] = ip
-
 
 if __name__ == "__main__":
     DOMAIN = sys.argv[2]
     PORT = int(sys.argv[1])
     sev = DNSserver(port=PORT)
-    sev.add_name('www.aa.com', '192.168.0.1')  # add a A record
-    sev.add_name('www.bb.com', '192.168.0.2')  # add a A record
     # sev.addname('*', '0.0.0.0') # default address
     print('listening...')
     sev.serve_forever()  # start DNS server
