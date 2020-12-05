@@ -6,18 +6,48 @@ import traceback
 import time
 import sys
 import MeasureClient
+import urllib
+import json
+import math
 
 # import dnslib
 TTL = 60
 
 EC2_HOST = {
-             'ec2-34-238-192-84.compute-1.amazonaws.com': '34.238.192.84',
-            'ec2-13-231-206-182.ap-northeast-1.compute.amazonaws.com': '13.231.206.182',
-            'ec2-13-239-22-118.ap-southeast-2.compute.amazonaws.com': '13.239.22.118',
-            # 'ec2-34-248-209-79.eu-west-1.compute.amazonaws.com': '34.248.209.79',
-            # 'ec2-18-231-122-62.sa-east-1.compute.amazonaws.com': '18.231.122.62',
-            # 'ec2-3-101-37-125.us-west-1.compute.amazonaws.com': '3.101.37.125'
-            }
+    'ec2-34-238-192-84.compute-1.amazonaws.com': '34.238.192.84',  # N. Virginia
+    'ec2-13-231-206-182.ap-northeast-1.compute.amazonaws.com': '13.231.206.182',  # Tokyo
+    'ec2-13-239-22-118.ap-southeast-2.compute.amazonaws.com': '13.239.22.118',  # Sydney
+    # 'ec2-34-248-209-79.eu-west-1.compute.amazonaws.com': '34.248.209.79', #Ireland
+    # 'ec2-18-231-122-62.sa-east-1.compute.amazonaws.com': '18.231.122.62', #Sao Paulo
+    # 'ec2-3-101-37-125.us-west-1.compute.amazonaws.com': '3.101.37.125' #N. California
+}
+
+
+def get_location(ip):
+    response = urllib.urlopen('http://ip-api.com/json/' + ip)
+    resp_json = json.load(response)
+    return resp_json['lat'], resp_json['lon']
+
+
+def get_dis_to_client(client_ip):
+    client = get_location(client_ip)
+    host_dis = {}
+    for host in EC2_HOST.keys():
+        host_ip = EC2_HOST[host]
+        location = get_location(host_ip)
+        dis = math.sqrt((location[0] - client[0]) ** 2 + (location[1] - client[1]) ** 2)
+
+        host_dis[host] = dis
+        print(host_dis)
+    return host_dis
+
+
+def get_nearest_3(host_dis):
+    dis_tuple_ls = sorted(host_dis.items(), key=lambda x: x[1])
+    sorted_hosts = map(lambda x: x[0], dis_tuple_ls)
+    print('sorted host ============= ', sorted_hosts)
+    return sorted_hosts[:1]
+
 
 
 class DNSserver:
@@ -37,6 +67,7 @@ class DNSserver:
                 print('new dns <- ', addr[0])
 
                 self.measure_client.set_probe(addr[0])
+                self.measure_client.set_hosts(get_nearest_3(get_dis_to_client(addr[0])))
                 dns = DNSPacket.DNSFrame(data)
                 name = dns.getname()
                 toip = None
@@ -49,7 +80,6 @@ class DNSserver:
                 continue
                 '''
 
-
                 if dns.query.type != 1 or name != DOMAIN:
                     print('diff in domain...', name, DOMAIN)
                     continue
@@ -58,7 +88,7 @@ class DNSserver:
                 if self.cache.__contains__(addr[0]) \
                         and time.time() - self.cache.get(addr[0])[1] <= TTL:
                     toip = self.cache.get(addr[0])[0]
-                    ifrom='cache'
+                    ifrom = 'cache'
                     # update ttl
                     ttl = TTL - (time.time() - self.cache.get(addr[0])[1])
                     print('%s: %s-->%s (%s)' % (addr[0], name, toip, ifrom))
@@ -77,7 +107,6 @@ class DNSserver:
                     ifrom = "rtt"
                     best_host = self.measure_client.get_best()
                     toip = EC2_HOST[best_host]
-
 
                     '''
                     if self.namemap.__contains__(name):
@@ -105,10 +134,10 @@ class DNSserver:
                     '''
                     if toip:
                         dns.setanswer(toip)
-                        self.cache[addr[0]]=(toip, time.time())
+                        self.cache[addr[0]] = (toip, time.time())
                     print('%s: %s-->%s (%s)' % (addr[0], name, toip, ifrom))
-                # pprint.pprint(t1.decode_dns_message(dns.getbytes()))
-                # print(dnslib.DNSRecord.parse(dns.getbytes()))
+                    # pprint.pprint(t1.decode_dns_message(dns.getbytes()))
+                    # print(dnslib.DNSRecord.parse(dns.getbytes()))
                     self.server.sendto(dns.pack(), addr)
                 # else:
                 #     # If this is not query a A record, ignore it

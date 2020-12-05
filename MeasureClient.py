@@ -14,6 +14,9 @@ class MeasureClient:
     def set_probe(self, client_ip):
         self.probe= client_ip
 
+    def set_hosts(self, hosts):
+        self.hosts = hosts
+
     def generate_request(self):
         path = '/ping-' + self.probe
         rqst = 'GET ' + path + ' HTTP/1.1'
