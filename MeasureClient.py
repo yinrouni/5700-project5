@@ -4,12 +4,15 @@ import re
 
 
 class MeasureClient:
-    def __init__(self, client_ip, host_names, port):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.probe = client_ip
+    def __init__(self, host_names, port):
+
+        self.probe = ''
         self.hosts = host_names
         self.hosts_rtt = []  # (host, rtt)
         self.port = port
+
+    def set_probe(self, client_ip):
+        self.probe= client_ip
 
     def generate_request(self):
         path = '/ping-' + self.probe
@@ -30,11 +33,11 @@ class MeasureClient:
         for host in self.hosts:
             try:
                 print('try--- ', host, self.port)
-                self.socket.connect((host, self.port))
-
-                self.socket.sendall(self.generate_request().encode())
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((host, self.port))
+                s.sendall(self.generate_request().encode())
                 while True:
-                    rtt = self.socket.recv(1024).decode()
+                    rtt = s.recv(1024).decode()
 
                     print('raw result ', rtt)
                     pattern = re.compile('round-trip min/avg/max/stddev = (.*) ms\n')
@@ -43,7 +46,7 @@ class MeasureClient:
 
                     self.hosts_rtt.append((host, float(result)))
                     break
-                self.socket.close()
+                s.close()
             except:
                 traceback.print_exc()
                 continue

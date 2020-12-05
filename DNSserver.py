@@ -12,8 +12,8 @@ TTL = 60
 
 EC2_HOST = {
              'ec2-34-238-192-84.compute-1.amazonaws.com': '34.238.192.84',
-            # 'ec2-13-231-206-182.ap-northeast-1.compute.amazonaws.com': '13.231.206.182',
-            # 'ec2-13-239-22-118.ap-southeast-2.compute.amazonaws.com': '13.239.22.118',
+            'ec2-13-231-206-182.ap-northeast-1.compute.amazonaws.com': '13.231.206.182',
+            'ec2-13-239-22-118.ap-southeast-2.compute.amazonaws.com': '13.239.22.118',
             # 'ec2-34-248-209-79.eu-west-1.compute.amazonaws.com': '34.248.209.79',
             # 'ec2-18-231-122-62.sa-east-1.compute.amazonaws.com': '18.231.122.62',
             # 'ec2-3-101-37-125.us-west-1.compute.amazonaws.com': '3.101.37.125'
@@ -27,7 +27,7 @@ class DNSserver:
         self.port = port
         self.namemap = {}
         self.cache = {}  # client ip => (which replica to map, last time to fetch ip)
-        self.measure_client = None
+        self.measure_client = MeasureClient.MeasureClient(EC2_HOST.keys(), self.port)
 
     def serve_forever(self):
         try:
@@ -35,8 +35,8 @@ class DNSserver:
                 # dns request
                 data, addr = self.server.recvfrom(1024)
                 print('new dns <- ', addr[0])
-                self.measure_client = MeasureClient.MeasureClient(addr[0], EC2_HOST.keys(), self.port)
 
+                self.measure_client.set_probe(addr[0])
                 dns = DNSPacket.DNSFrame(data)
                 name = dns.getname()
                 toip = None
