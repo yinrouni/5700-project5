@@ -60,23 +60,31 @@ class CacheHandler:
 
             # if file_name in self.cached_data:
             #     self.cached_data.remove(file_name)
+            temp_file = gzip.open(file_name + '.temp', 'wb')
+            temp_file.write(data)
+            temp_file.close()
+            data_size = os.path.getsize(file_name + '.temp')
+            if data_size > MAX_SIZE:
+                os.remove(file_name + '.temp')
+                return
+            else:
+                while self.is_full(data_size):
+                    self.cached_data.sort(key=lambda x: x[1])
+                    discard = self.cached_data.pop(0)[0]
+                    os.remove(self.cache_dir + '/' + discard)
 
-            if self.is_full(data):
-                self.cached_data.sort(key=lambda x: x[1])
-                discard = self.cached_data.pop(0)[0]
-                os.remove(self.cache_dir + '/' + discard)
+                os.remove(file_name + '.temp')
+                file = gzip.open(self.cache_dir + '/' + file_name, 'wb')
+                file.write(data)
+                file.close()
+                self.cached_data.append((file_name, 1))
+                print('cache update ------', self.cached_data)
 
-            file = gzip.open(self.cache_dir + '/' + file_name, 'wb')
-            file.write(data)
-            file.close()
-            self.cached_data.append((file_name, 1))
-            print('cache update ------', self.cached_data)
-
-    def is_full(self, data):
+    def is_full(self, data_size):
         cache = os.listdir(self.cache_dir)
         total = 0
         for f in cache:
             total += os.path.getsize(self.cache_dir + '/' + f)
-        # TODO
-        # total += sizeof(data)
+
+        total += data_size
         return total >= MAX_SIZE

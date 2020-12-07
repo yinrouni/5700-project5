@@ -5,7 +5,6 @@ import traceback
 import subprocess
 import sys
 
-
 # Build a simple cache server in python: https://alexanderell.is/posts/simple-cache-server-in-python/
 
 RTT_MEASURE_PATH = '/ping-'
@@ -38,7 +37,7 @@ def fetch_from_server(url):
         print(response.code)
         response_headers = 'HTTP/1.1 200 OK\r\n' + response_headers
 
-        #print(content)
+        # print(content)
         return response_headers, content
     except:
         traceback.print_exc()
@@ -104,7 +103,7 @@ class HttpServer:
         file_from_cache = self.cache_handler.get(path)
         if file_from_cache is not None:
             print('Fetched successfully from cache.')
-            response_headers = 'HTTP/1.1 200 OK\r\nContent-Length: ' + str(len(file_from_cache))+ '\r\n\r\n'
+            response_headers = 'HTTP/1.1 200 OK\r\nContent-Length: ' + str(len(file_from_cache)) + '\r\n\r\n'
             # print(file_from_cache)
             return response_headers.encode() + file_from_cache
         else:
@@ -117,6 +116,7 @@ class HttpServer:
                 return (headers + '\r\n').encode() + file_from_server
             else:
                 return None
+
 
 if __name__ == "__main__":
     PORT = int(sys.argv[1])
