@@ -44,11 +44,12 @@ amount of time, we used multi-threads to handle replicas concurrently for both o
 
 
 Rouni Yin implemented
-1) the DNS server including creating the response packet, cache management, active measurement for TTC and replica
-selection.
+1) the DNS server including creating the response packet, cache management, active measurement for TTC 
+and replica selection.
 2) the HTTP server including responding with cache, requesting from origin server and cache management strategy.
 
 Chihao Sun implemented
-
+1）A cache replacement strategy to make sure that use an in-memory cache no larger than 10MB.
+2) Test code on EC2 and cs5700cdnproject.ccs.neu.edu make sure that our project‘s functions are executable
 
 
