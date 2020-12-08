@@ -28,28 +28,18 @@ class MeasureClient:
 
     def get_min_rtt_host(self):
         min = None
-        # if list(self.hosts_rtt.queue)[0][1] == list(self.hosts_rtt.queue)[1][1] \
-        #         and list(self.hosts_rtt.queue)[1][1] == list(self.hosts_rtt.queue)[2][1]:
-        #     return self.hosts[0]
-        rtt_time = None
-        same_flag = False
+        if list(self.hosts_rtt.queue)[0][1] == list(self.hosts_rtt.queue)[1][1] \
+                and list(self.hosts_rtt.queue)[1][1] == list(self.hosts_rtt.queue)[2][1]:
+            print('min_rtt_host', self.hosts[0])
+            return self.hosts[0]
+
         for item in list(self.hosts_rtt.queue):
-            if rtt_time is None:
-                rtt_time = item[1]
-            if rtt_time is not None and rtt_time == item[1]:
-                same_flag = True
-            else:
-                same_flag = False
 
             if min is None or item[1] < min[1]:
                 min = item
                 print('min', min)
 
-        if same_flag:
-            return self.hosts[0]
-        else:
-            return min[0]
-
+        return min[0]
 
     def get_rtt_help(self, host):
         try:
