@@ -28,12 +28,28 @@ class MeasureClient:
 
     def get_min_rtt_host(self):
         min = None
-
+        # if list(self.hosts_rtt.queue)[0][1] == list(self.hosts_rtt.queue)[1][1] \
+        #         and list(self.hosts_rtt.queue)[1][1] == list(self.hosts_rtt.queue)[2][1]:
+        #     return self.hosts[0]
+        rtt_time = None
+        same_flag = False
         for item in list(self.hosts_rtt.queue):
+            if rtt_time is None:
+                rtt_time = item[1]
+            if rtt_time is not None and rtt_time == item[1]:
+                same_flag = True
+            else:
+                same_flag = False
+
             if min is None or item[1] < min[1]:
                 min = item
                 print('min', min)
-        return min[0]
+
+        if same_flag:
+            return self.hosts[0]
+        else:
+            return min[0]
+
 
     def get_rtt_help(self, host):
         try:
@@ -46,7 +62,7 @@ class MeasureClient:
 
                 print('raw result ', rtt)
                 pattern = re.compile('round-trip min/avg/max/stddev = (.*) ms\n')
-                result = pattern.findall(rtt)[0].split('/')[1]  # if len(pattern.findall(rtt)) > 0 else 0
+                result = pattern.findall(rtt)[0].split('/')[1] if len(pattern.findall(rtt)) > 0 else 999
                 print('rtt result ', result)
 
                 self.hosts_rtt.put((host, float(result)))
@@ -93,4 +109,6 @@ class MeasureClient:
         print(time.time() - start)
         print('-----------------------------\n')
         print(list(self.hosts_rtt.queue))
-        return self.get_min_rtt_host()
+        min_rtt = self.get_min_rtt_host()
+        self.hosts_rtt.queue.clear()
+        return min_rtt
