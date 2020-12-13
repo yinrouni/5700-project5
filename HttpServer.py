@@ -7,6 +7,7 @@ import sys
 
 # Build a simple cache server in python: https://alexanderell.is/posts/simple-cache-server-in-python/
 
+# The mark which lets http server know it is measure client request.
 RTT_MEASURE_PATH = '/ping-'
 
 
@@ -22,8 +23,14 @@ def get_request_path(request):
     return path
 
 
-# TODO handle cache
 def fetch_from_server(url):
+    """
+    Get header and content by url
+    :param url: The url which client request
+    :return
+    The header and content by url
+    """
+
     q = 'http://' + url
 
     try:
@@ -37,7 +44,6 @@ def fetch_from_server(url):
         print(response.code)
         response_headers = 'HTTP/1.1 200 OK\r\n' + response_headers
 
-        # print(content)
         return response_headers, content
     except:
         traceback.print_exc()
@@ -48,14 +54,20 @@ class HttpServer:
     def __init__(self, origin, port):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(('', port))
-        # print(self.server.getsockname())
         self.origin = origin
         self.cache_handler = CacheHandler.CacheHandler()
 
+    # the method that close the server
     def shutdown(self):
         self.server.close()
 
     def process_rtt_request(self, path):
+        """
+        Get result of rtt
+        :param path: The path in the request
+        :return
+        The content according to path
+        """
         print('rtt path: ', path)
         client_ip = path[len(RTT_MEASURE_PATH):]
         result = subprocess.check_output(["scamper", "-c", "ping -c 1", "-i", client_ip])
@@ -97,16 +109,23 @@ class HttpServer:
                 print(traceback.format_exc())
 
     def do_GET(self, path):
+        """
+        According to situation to process the get request
+        :param path: The path in the request
+        :return
+        The information of rtt
+        """
         # if in the cache, return the content in cache
-
         # else generate http GET request according to the url
+
         file_from_cache = self.cache_handler.get(path)
         if file_from_cache is not None:
             print('Fetched successfully from cache.')
             response_headers = 'HTTP/1.1 200 OK\r\nContent-Length: ' + str(len(file_from_cache)) + '\r\n\r\n'
-            # print(file_from_cache)
+
             return response_headers.encode() + file_from_cache
         else:
+            # get the content from origin server and put it into cache
             url = self.origin + ':8080' + path
             print('Not in cache. Fetching from server.')
             headers, file_from_server = fetch_from_server(url)
@@ -122,7 +141,6 @@ if __name__ == "__main__":
     PORT = int(sys.argv[1])
     ORIGIN = sys.argv[2]
     server = HttpServer(ORIGIN, PORT)
-    # server = HttpServer('ec2-18-207-254-152.compute-1.amazonaws.com', 50004)
     print('listening...')
     server.serve_forever()
 

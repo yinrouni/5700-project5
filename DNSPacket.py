@@ -56,7 +56,7 @@ class DNSFrame:
     def getname(self):
         return self.query.name
 
-    def setanswer(self, ip, ttl=60):
+    def setanswer(self, ip, ttl=240):
         self.answer = DNSAnswer(ip, ttl)
         self.answers = 1
         self.flags = 33152

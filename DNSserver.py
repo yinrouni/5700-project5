@@ -8,13 +8,11 @@ import sys
 import MeasureClient
 import urllib
 import json
-import math
 import threading
 import Queue
 from math import sin, cos, sqrt, atan2, radians
 
-# import dnslib
-TTL = 60
+TTL = 240
 
 EC2_HOST = {
     'ec2-34-238-192-84.compute-1.amazonaws.com': '34.238.192.84',  # N. Virginia
@@ -27,14 +25,26 @@ EC2_HOST = {
 
 
 def get_location(ip):
+    """
+    Use api to get the location of ip
+    :param ip
+    :return
+    the Latitude and Longitude
+    """
     response = urllib.urlopen('http://ip-api.com/json/' + ip)
     resp_json = json.load(response)
     print(resp_json['lat'], resp_json['lon'])
     return resp_json['lat'], resp_json['lon']
 
 
-# TODO: correct the formula --- DONE
 def cal_dis(client, host):
+    """
+    Calculate the distance between client and host
+    :param client: the Latitude and Longitude of client
+    :param host: the Latitude and Longitude of host
+    :return
+    The distance between client and host
+    """
     # approximate radius of earth in km
     R = 6373.0
 
@@ -55,35 +65,42 @@ def cal_dis(client, host):
 
 
 def get_dis_to_client(client_ip):
+    """
+    Get the Queue of  distance between each EC2 host and client
+    :param client_ip: ip of client
+    :return
+    The Queue of  distance distance between each EC2 host and client
+    """
+
+    # get the client location
     client = get_location(client_ip)
     host_dis = Queue.Queue()
 
     threads = []
 
+    # use for loop to get each ec2 host's ip then cal the distance and put it into queue
     for host in EC2_HOST.keys():
         host_ip = EC2_HOST[host]
         t = threading.Thread(target=lambda q, arg1: q.put((host, cal_dis(client, get_location(arg1)))),
                              args=(host_dis, host_ip))
         t.start()
         threads.append(t)
-    print('======', len(threads))
     while threads:
         threads.pop().join()
     print('+++++++++++++++++++++++++++++++++++++++++')
     print(host_dis)
     print('+++++++++++++++++++++++++++++++++++++++++')
 
-    # for host in EC2_HOST.keys():
-    #     host_ip = EC2_HOST[host]
-    #     location = get_location(host_ip)
-    #     dis = math.sqrt((location[0] - client[0]) ** 2 + (location[1] - client[1]) ** 2)
-    #
-    #     host_dis[host] = dis
-    #     print(host_dis)
     return host_dis
 
 
 def get_nearest_3(host_dis):
+    """
+    Get the Queue of  distance between each EC2 host and client
+    :param host_dis: the queue of host distance
+    :return
+    The 3 nearest distance between replica server and client
+    """
     dis_tuple_ls = sorted(list(host_dis.queue), key=lambda x: x[1])
     # dis_tuple_ls = sorted(host_dis.items(), key=lambda x: x[1])
     sorted_hosts = map(lambda x: x[0], dis_tuple_ls)
@@ -92,6 +109,12 @@ def get_nearest_3(host_dis):
 
 
 class DNSserver:
+    """
+    This is DNS server which is listening the request and then  redirection to send clients to
+    the replica server with the fastest response time.
+
+    """
+
     def __init__(self, port):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # udp
         self.server.bind(('', port))
@@ -110,21 +133,15 @@ class DNSserver:
                 self.measure_client.set_probe(addr[0])
 
                 start1 = time.time()
+
+                # Set the 3 nearest distance between replica server and client
                 self.measure_client.set_hosts(get_nearest_3(get_dis_to_client(addr[0])))
                 print('++++++++++++++++++++++++++++++++++++++++++', time.time() - start1)
-                # self.measure_client.set_hosts(EC2_HOST.keys())
 
                 dns = DNSPacket.DNSFrame(data)
                 name = dns.getname()
                 toip = None
                 ifrom = ''
-
-                '''
-                toip = self.namemap[name]
-                dns.setanswer(toip)
-                self.server.sendto(dns.pack(), addr)
-                continue
-                '''
 
                 if dns.query.type != 1 or name != DOMAIN:
                     print('diff in domain...', name, DOMAIN)
@@ -141,7 +158,6 @@ class DNSserver:
                     dns.setanswer(toip, ttl)
                     self.server.sendto(dns.pack(), addr)
 
-                # TODO cache --- DONE
                 else:
                     print(self.cache)
                     if self.cache.__contains__(addr[0]):
@@ -152,18 +168,20 @@ class DNSserver:
                     # toip = None
                     ifrom = "rtt"
                     best_host = self.measure_client.get_best()
-                    toip = EC2_HOST[best_host]
+                    print(best_host)
+
+                    # if the 3 nearest replica server all connection refused, the toip will be None
+                    # then the server will listen for next client request and try to connect again
+                    if best_host:
+                        toip = EC2_HOST[best_host]
+                    else:
+                        print("All Connection refused")
 
                     if toip:
                         dns.setanswer(toip)
                         self.cache[addr[0]] = (toip, time.time())
                     print('%s: %s-->%s (%s)\t\t%s' % (addr[0], name, toip, ifrom, str(time.time() - start)))
-                    # pprint.pprint(t1.decode_dns_message(dns.getbytes()))
-                    # print(dnslib.DNSRecord.parse(dns.getbytes()))
                     self.server.sendto(dns.pack(), addr)
-                # else:
-                #     # If this is not query a A record, ignore it
-                #     self.server.sendto(data, addr)
         except KeyboardInterrupt:
             self.server.close()
             print('shutdonwn...')

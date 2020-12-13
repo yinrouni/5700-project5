@@ -17,6 +17,10 @@ FILES = input output
 all:
 	chmod +x dnsserver
 	chmod +x httpserver
+	chmod +x deployCDN
+	chmod +x runCDN
+	chmod +x stopCDN
+
 
 # In this context, the *.project pattern means "anything that has the .project extension"
 clean:
