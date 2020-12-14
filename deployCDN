@@ -20,27 +20,22 @@ do
     case $key in
         -p)
         PORT="$2"
-        echo "$PORT"
         shift
         ;;
         -o)
         ORIGIN="$2"
-        echo "$ORIGIN"
         shift
         ;;
         -n)
         NAME="$2"
-        echo "$NAME"
         shift
         ;;
         -u)
         USERNAME="$2"
-        echo "$USERNAME"
         shift
         ;;
         -i)
         KEYFILE="$2"
-        echo "$KEYFILE"
         shift
         ;;
         *)
@@ -52,12 +47,14 @@ done
 echo "deploying httpserver to EC2 hosts"
 for HOST in "${EC2_HOSTS[@]}"
 do
+    echo "$HOST"
     ssh -i $KEYFILE $USERNAME@$HOST 'rm -rf ~/cdnproject'
     ssh -i $KEYFILE $USERNAME@$HOST 'mkdir ~/cdnproject'
     scp -i $KEYFILE HttpServer.py CacheHandler.py httpserver $USERNAME@$HOST:'~/cdnproject'
 done
 
 echo "deploying dnsserver to Khoury system"
+echo "$DNS_SERVER"
     ssh -i $KEYFILE $USERNAME@$DNS_SERVER 'rm -rf ~/cdnproject'
     ssh -i $KEYFILE $USERNAME@$DNS_SERVER 'mkdir ~/cdnproject'
     scp -i $KEYFILE DNSPacket.py MeasureClient.py DNSserver.py dnsserver $USERNAME@$DNS_SERVER:'~/cdnproject'

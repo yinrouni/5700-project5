@@ -2,7 +2,6 @@
 # http://c.biancheng.net/view/6457.html
 import socket
 import DNSPacket
-import traceback
 import time
 import sys
 import MeasureClient
@@ -176,6 +175,7 @@ class DNSserver:
                         toip = EC2_HOST[best_host]
                     else:
                         print("All Connection refused")
+                        continue
 
                     if toip:
                         dns.setanswer(toip)

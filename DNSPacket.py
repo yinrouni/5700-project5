@@ -21,7 +21,6 @@ class DNSQuery:
         self.querybytes = data[0:i + 1]
         (self.type, self.classify) = struct.unpack('!HH', data[i + 1:i + 5])
         self.len = i + 5
-        # print(data[self.len:])
 
     def pack(self):
         return self.querybytes + struct.pack('!HH', self.type, self.classify), self.data[self.len:]

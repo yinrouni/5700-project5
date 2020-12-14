@@ -1,3 +1,5 @@
+# https://stackoverflow.com/questions/29142/getting-ssh-to-execute-a-command-in-the-background-on-target-machine
+
 #! /bin/bash
 EC2_HOSTS=(
     ec2-34-238-192-84.compute-1.amazonaws.com
@@ -16,27 +18,22 @@ do
     case $key in
         -p)
         PORT="$2"
-        echo "$PORT"
         shift
         ;;
         -o)
         ORIGIN="$2"
-        echo "$ORIGIN"
         shift
         ;;
         -n)
         NAME="$2"
-        echo "$NAME"
         shift
         ;;
         -u)
         USERNAME="$2"
-        echo "$USERNAME"
         shift
         ;;
         -i)
         KEYFILE="$2"
-        echo "$KEYFILE"
         shift
         ;;
         *)
@@ -53,4 +50,5 @@ do
 done
 
 echo "run dnsserver"
+echo "$DNS_SERVER"
     ssh -i $KEYFILE -n -f $USERNAME@$DNS_SERVER "sh -c 'cd ~/cdnproject/; nohup ./dnsserver -p $PORT -n $NAME > /dev/null 2>&1 &'"

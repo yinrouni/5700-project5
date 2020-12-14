@@ -51,6 +51,13 @@ def fetch_from_server(url):
 
 
 class HttpServer:
+    """
+    this http server based on a socket waiting  for client to connect and send request.
+    To make sure the performance, we created a cache along with this http server.
+    When receiving a request from client, this http server will check if there is a cached
+    response for this request. If there is, response with the cache.
+    If not, it will continue the request the resource from the origin server.
+    """
     def __init__(self, origin, port):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(('', port))
