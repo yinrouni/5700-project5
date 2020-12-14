@@ -52,5 +52,6 @@ Chihao Sun implemented
 1）A cache replacement strategy to make sure that use an in-memory cache no larger than 10MB.
 2) Test code on EC2 and cs5700cdnproject.ccs.neu.edu make sure that our project‘s functions are executable.
 3) Fix the a bug of MeasureClient.py
+4) implemented the deploy/run/stop script.
 
 
