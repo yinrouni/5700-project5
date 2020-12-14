@@ -1,8 +1,9 @@
+#! /bin/bash
+
 # https://stackoverflow.com/questions/33281208/issue-with-while-case-statement-in-linux-scripting
 # https://docstore.mik.ua/orelly/unix3/upt/ch35_22.htm
 # https://www.cyberciti.biz/faq/bash-for-loop/
 
-#! /bin/bash
 EC2_HOSTS=(
     ec2-34-238-192-84.compute-1.amazonaws.com
     ec2-13-231-206-182.ap-northeast-1.compute.amazonaws.com

@@ -1,6 +1,6 @@
+#! /bin/bash
 # https://stackoverflow.com/questions/29142/getting-ssh-to-execute-a-command-in-the-background-on-target-machine
 
-#! /bin/bash
 EC2_HOSTS=(
     ec2-34-238-192-84.compute-1.amazonaws.com
     ec2-13-231-206-182.ap-northeast-1.compute.amazonaws.com
