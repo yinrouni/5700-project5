@@ -38,9 +38,21 @@ https://ip-api.com/. Pick top 3 nearest for the following active measurement of 
 - Measure the TTC actively by scamper. Send a dummy request from the client ip used for measurement, get TTC using
 scamper on the server. Find the one having the best TTC.
 
+How to evaluate:
+Generally, we use cmd 'time wget' to get total download time. For specific process, like scamper active measurement, we
+record the start and end points to see how effective it is.
+
 Challenges:
 - To deal with requesting locations of replicas using api and TTC from replicas in the measurement client which take
 amount of time, we used multi-threads to handle replicas concurrently for both of them.
+
+Improvement:
+- For DNS, we use geolocation mapping and active response time measurement using scamper to select the replica with the
+best performance. Besides, we can add passive measurement, e.g. sending fractions of clients to different servers.
+- We use LFU cache in DNS server. In order to improve the cache hit ratio, we can add LFU & LRU cached mechanism.
+- When doing active measurement using scamper, we sometimes found 100% packets loss and no RTT returned. If we have more
+ time, we will figure it out and try to fix it.
+
 
 
 Rouni Yin implemented
