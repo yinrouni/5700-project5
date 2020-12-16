@@ -187,6 +187,7 @@ class DNSserver:
             print('shutdonwn...')
             return
         except:
+            print('RETRY...')
             self.serve_forever()
 
 
