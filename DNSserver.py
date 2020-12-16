@@ -186,6 +186,8 @@ class DNSserver:
             self.server.close()
             print('shutdonwn...')
             return
+        except:
+            self.serve_forever()
 
 
 if __name__ == "__main__":
