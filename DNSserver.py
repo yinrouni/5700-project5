@@ -21,6 +21,14 @@ EC2_HOST = {
     'ec2-18-231-122-62.sa-east-1.compute.amazonaws.com': '18.231.122.62',  # Sao Paulo
     'ec2-3-101-37-125.us-west-1.compute.amazonaws.com': '3.101.37.125'  # N. California
 }
+EC2_IP_LOCATION= {
+  "ec2-34-238-192-84.compute-1.amazonaws.com":[-77.4874, 39.0438],
+"ec2-13-231-206-182.ap-northeast-1.compute.amazonaws.com":[139.692, 35.6895],
+"ec2-13-239-22-118.ap-southeast-2.compute.amazonaws.com":[151.2002, -33.8591],
+"ec2-34-248-209-79.eu-west-1.compute.amazonaws.com":[-6.26031, 53.3498],
+"ec2-18-231-122-62.sa-east-1.compute.amazonaws.com":[-46.6333, -23.5505],
+"ec2-3-101-37-125.us-west-1.compute.amazonaws.com":[-121.895, 37.3394]
+}
 
 
 def get_location(ip):
@@ -73,19 +81,23 @@ def get_dis_to_client(client_ip):
 
     # get the client location
     client = get_location(client_ip)
-    host_dis = Queue.Queue()
+    host_dis = []
 
     threads = []
 
     # use for loop to get each ec2 host's ip then cal the distance and put it into queue
-    for host in EC2_HOST.keys():
-        host_ip = EC2_HOST[host]
-        t = threading.Thread(target=lambda q, arg1: q.put((host, cal_dis(client, get_location(arg1)))),
-                             args=(host_dis, host_ip))
-        t.start()
-        threads.append(t)
-    while threads:
-        threads.pop().join()
+    for host in EC2_IP_LOCATION.keys():
+        location = EC2_IP_LOCATION[host]
+        dis = cal_dis(client, location)
+        host_dis.append((host, dis))
+    # for host in EC2_HOST.keys():
+    #     host_ip = EC2_HOST[host]
+    #     t = threading.Thread(target=lambda q, arg1: q.put((host, cal_dis(client, get_location(arg1)))),
+    #                          args=(host_dis, host_ip))
+    #     t.start()
+    #     threads.append(t)
+    # while threads:
+    #     threads.pop().join()
     print('+++++++++++++++++++++++++++++++++++++++++')
     print(host_dis)
     print('+++++++++++++++++++++++++++++++++++++++++')
@@ -100,7 +112,7 @@ def get_nearest_3(host_dis):
     :return
     The 3 nearest distance between replica server and client
     """
-    dis_tuple_ls = sorted(list(host_dis.queue), key=lambda x: x[1])
+    dis_tuple_ls = sorted(host_dis, key=lambda x: x[1])
     # dis_tuple_ls = sorted(host_dis.items(), key=lambda x: x[1])
     sorted_hosts = map(lambda x: x[0], dis_tuple_ls)
     print('sorted host ============= ', sorted_hosts)
@@ -186,9 +198,9 @@ class DNSserver:
             self.server.close()
             print('shutdonwn...')
             return
-        except:
-            print('RETRY...')
-            self.serve_forever()
+        # except:
+        #     print('RETRY...')
+        #     self.serve_forever()
 
 
 if __name__ == "__main__":
