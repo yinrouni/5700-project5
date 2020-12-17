@@ -38,8 +38,13 @@ def get_location(ip):
     :return
     the Latitude and Longitude
     """
-    response = urllib.urlopen('http://ip-api.com/json/' + ip)
-    resp_json = json.load(response)
+    while True:
+        try:
+            response = urllib.urlopen('http://ip-api.com/json/' + ip)
+            resp_json = json.load(response)
+            break
+        except:
+            continue
     print(resp_json['lat'], resp_json['lon'])
     return resp_json['lon'], resp_json['lat']
 
