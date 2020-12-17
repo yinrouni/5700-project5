@@ -30,6 +30,8 @@ EC2_IP_LOCATION= {
 "ec2-3-101-37-125.us-west-1.compute.amazonaws.com":[-121.895, 37.3394]
 }
 
+DEFAULT= '34.238.192.84'
+
 
 def get_location(ip):
     """
@@ -146,13 +148,13 @@ class DNSserver:
                 print('new dns <- ', addr[0])
                 start = time.time()
 
-                self.measure_client.set_probe(addr[0])
-
-                start1 = time.time()
-
-                # Set the 3 nearest distance between replica server and client
-                self.measure_client.set_hosts(get_nearest_3(get_dis_to_client(addr[0])))
-                print('++++++++++++++++++++++++++++++++++++++++++', time.time() - start1)
+                # self.measure_client.set_probe(addr[0])
+                #
+                # start1 = time.time()
+                #
+                # # Set the 3 nearest distance between replica server and client
+                # self.measure_client.set_hosts(get_nearest_3(get_dis_to_client(addr[0])))
+                # print('++++++++++++++++++++++++++++++++++++++++++', time.time() - start1)
 
                 dns = DNSPacket.DNSFrame(data)
                 name = dns.getname()
@@ -175,24 +177,38 @@ class DNSserver:
                     self.server.sendto(dns.pack(), addr)
 
                 else:
-                    print(self.cache)
-                    if self.cache.__contains__(addr[0]):
-                        print(time.time() - self.cache.get(addr[0])[1])
-                    # If this is query a A record, then response it
+                    try:
+                        self.measure_client.set_probe(addr[0])
 
-                    # name = dns.getname()
-                    # toip = None
-                    ifrom = "rtt"
-                    best_host = self.measure_client.get_best()
-                    print(best_host)
+                        start1 = time.time()
 
-                    # if the 3 nearest replica server all connection refused, the toip will be None
-                    # then the server will listen for next client request and try to connect again
-                    if best_host:
-                        toip = EC2_HOST[best_host]
-                    else:
-                        print("All Connection refused")
-                        continue
+                        # Set the 3 nearest distance between replica server and client
+                        self.measure_client.set_hosts(get_nearest_3(get_dis_to_client(addr[0])))
+                        print('++++++++++++++++++++++++++++++++++++++++++', time.time() - start1)
+
+                        print(self.cache)
+                        if self.cache.__contains__(addr[0]):
+                            print(time.time() - self.cache.get(addr[0])[1])
+                        # If this is query a A record, then response it
+
+                        # name = dns.getname()
+                        # toip = None
+                        ifrom = "rtt"
+                        best_host = self.measure_client.get_best()
+                        print(best_host)
+
+                        # if the 3 nearest replica server all connection refused, the toip will be None
+                        # then the server will listen for next client request and try to connect again
+                        if best_host:
+                            toip = EC2_HOST[best_host]
+                        else:
+                            print("All Connection refused")
+                            toip = DEFAULT
+                            ifrom = 'default'
+                            # continue
+                    except:
+                        toip = DEFAULT
+                        ifrom = 'default'
 
                     if toip:
                         dns.setanswer(toip)
@@ -203,9 +219,9 @@ class DNSserver:
             self.server.close()
             print('shutdonwn...')
             return
-        # except:
-        #     print('RETRY...')
-        #     self.serve_forever()
+        except:
+            print('RETRY...')
+            self.serve_forever()
 
 
 if __name__ == "__main__":
