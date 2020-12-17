@@ -41,7 +41,7 @@ def get_location(ip):
     response = urllib.urlopen('http://ip-api.com/json/' + ip)
     resp_json = json.load(response)
     print(resp_json['lat'], resp_json['lon'])
-    return resp_json['lat'], resp_json['lon']
+    return resp_json['lon'], resp_json['lat']
 
 
 def cal_dis(client, host):
